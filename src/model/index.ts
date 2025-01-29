@@ -1,8 +1,8 @@
 import { Schema, model, Connection, Model, Document, Types } from '@d680/db-client';
 import { MovieInfoScrapeSource, MovieInfoScrapeStatus } from '../types/movie.enum';
 export { MovieInfoScrapeSource, MovieInfoScrapeStatus };
-
 import { ISourceMoviePictureDocument, sourceMoviePictureSchema } from './picture';
+export * from './picture';
 
 /*
     刮削影片信息 Mongoose模型    
@@ -39,12 +39,7 @@ export interface ISourceMovieGeneralModel {
     name: string;
 }
 
-
-/**
- * 刮削影片信息模型
- */
-export interface ISourceMovieInfoDocument extends Document {
-    _id: Types.ObjectId;
+export interface ISourceMovieInfoModel {
     // 刮削状态 
     status: MovieInfoScrapeStatus,
     // 刮削源
@@ -119,7 +114,15 @@ export interface ISourceMovieInfoDocument extends Document {
 }
 
 /**
+ * 刮削影片信息模型
+ */
+export interface ISourceMovieInfoDocument extends Document, ISourceMovieInfoModel {
+    _id: Types.ObjectId;
+}
+
+/**
  * 刮削影片信息模型Schema
+
  */
 export const sourceMovieInfoSchema = new Schema<ISourceMovieInfoDocument>({
     // 刮削状态
