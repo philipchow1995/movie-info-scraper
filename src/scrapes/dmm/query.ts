@@ -1,5 +1,8 @@
-import { IBasePageQuery } from "@d680/shared";
 import { gql } from 'graphql-tag';
+import { IBaseQuery } from "../../interface/scraper";
+
+
+export const DMM_LIST_API_URL = 'https://api.video.dmm.co.jp/graphql';
 
 /*
     Dmm 刮削查询条件构造
@@ -58,7 +61,7 @@ export enum DmmSortType {
 /*
   Dmm 列表查询条件接口
 */
-export interface IDmmQuery extends IBasePageQuery {
+export interface IDmmQuery extends IBaseQuery {
   // 最大页数 | 0 不限制
   maxPage: number;
   // 内容类型 2D| VR
@@ -69,8 +72,6 @@ export interface IDmmQuery extends IBasePageQuery {
   releaseType?: DmmReleaseType;
   // 指定日
   deliveryStartDate?: Date;
-  // 搜索词
-  searchStr?: string;
   // 发行商 | publisher レーベル
   labelId?: number;
   // 制作商 | maker メーカー
@@ -89,6 +90,7 @@ export interface IDmmQuery extends IBasePageQuery {
 // 默认Dmm列表查询条件
 export const DEFAULT_DMM_QUERY: IDmmQuery = {
   maxPage: 0,
+  maxLimit: 0,
   contentType: DmmContentType.TWO_DIMENSION,
   sort: DmmSortType.REVIEW_RANK_SCORE,
   releaseType: DmmReleaseType.ALL,
@@ -98,9 +100,7 @@ export const DEFAULT_DMM_QUERY: IDmmQuery = {
   directorId: 0,
   actressId: 0,
   seriesId: 0,
-  genreId: 0,
-  page: 1,
-  perPage: 120
+  genreId: 0
 }
 
 /**
@@ -257,7 +257,6 @@ export interface IGraphqlMovieReview {
 export interface IGraphqlMovieSalesInfo {
 
 }
-
 
 /**
  * Dmm Graphql 查询 构造

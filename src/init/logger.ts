@@ -1,4 +1,5 @@
 import { Logger } from '@d680/log-service';
+export type { Logger };
 
 let dmmLoggerInstance: Logger | null = null;
 

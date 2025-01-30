@@ -23,6 +23,8 @@ export enum MovieInfoScrapeSource {
  * 刮削状态
  */
 export enum MovieInfoScrapeStatus {
+    // 已存在
+    EXIST = "EXIST",
     // 等待刮削
     WAITING = "WAITING",
     // 进行中

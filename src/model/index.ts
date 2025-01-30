@@ -1,7 +1,7 @@
 import { Schema, model, Connection, Model, Document, Types } from '@d680/db-client';
 import { MovieInfoScrapeSource, MovieInfoScrapeStatus } from '../types/movie.enum';
 export { MovieInfoScrapeSource, MovieInfoScrapeStatus };
-import { ISourceMoviePictureDocument, sourceMoviePictureSchema } from './picture';
+import { ISourceMoviePictureModel, sourceMoviePictureSchema } from './picture';
 export * from './picture';
 
 /*
@@ -40,78 +40,125 @@ export interface ISourceMovieGeneralModel {
 }
 
 export interface ISourceMovieInfoModel {
+    // 是否已存在
+    isExist: boolean;
     // 刮削状态 
     status: MovieInfoScrapeStatus,
     // 刮削源
     source: MovieInfoScrapeSource,
     // 刮削源URL
-    sourceUrl: string,
+    sourceUrl?: string,
     // 刮削源番号
-    code: string,
+    code?: string,
     // 刮削源厂牌
-    codeGroup: string,
+    codeGroup?: string,
     // 刮削源厂牌前缀
-    codeGroupPrefix: string,
+    codeGroupPrefix?: string,
+
     // 刮削源厂牌编号
-    groupNumber: number,
+    groupNumber?: number,
     // 刮削源原始番号
-    originalCode: string,
+    originalCode?: string,
 
     // 刮削源标题
-    title: string,
+    title?: string,
     // 刮削源订阅量|预览量
-    books: number,
+    books?: number,
     // 刮削源时长|秒
-    duration: number,
+    duration?: number,
     // 刮削源描述
-    description: string,
+    description?: string,
     // 刮削源评分
-    reviewData: any,
+    reviewData?: any,
     // 刮削源发行商
-    publisher: any,
+    publisher?: any,
     // 刮削源制作商
-    marker: any,
+    marker?: any,
     // 刮削源导演
-    director: any,
+    director?: any,
     // 刮削源标签
-    genres: any,
+    genres?: any,
+    // 刮削源其他标签 | 如Dmm的AI关联标签
+    otherGenres?: any,
+
     // 刮削源女优
-    actress: any,
+    actress?: any,
     // 刮削源系列
-    series: any,
+    series?: any,
 
     // 刮削源封面
-    coverUrl: string,
+    coverUrl?: string,
     // 刮削源海报
-    posterUrl: string,
+    posterUrl?: string,
     // 刮削源图片
-    pictures: ISourceMoviePictureDocument[],
+    pictures?: ISourceMoviePictureModel[],
 
     // 是否已上架(刮削来源)
-    isOnSale: boolean,
+    isOnSale?: boolean,
 
     // 是否启用
-    isEnabled: boolean,
+    isEnabled?: boolean,
 
     // 刮削消息
-    messages: any[],
+    messages?: any[],
 
     // html
-    html: string,
+    html?: string,
 
     // 配信日
-    releaseAt: Date,
+    releaseAt?: Date,
     // 发行日
-    publishAt: Date,
+    publishAt?: Date,
+
     // 刮削时间
-    collectedAt: Date,
+    collectedAt?: Date,
     // 创建时间
-    createdAt: Date,
+    createdAt?: Date,
     // 更新时间
-    updateAt: Date,
+    updateAt?: Date,
     // 删除时间
-    deleteAt: Date,
+    deleteAt?: Date,
 }
+
+export const DEFAULT_SOURCE_MOVIE_INFO: ISourceMovieInfoModel = {
+    isExist: false,
+    status: MovieInfoScrapeStatus.WAITING,
+    source: MovieInfoScrapeSource.UNKNOWN,
+    sourceUrl: '',
+    code: '',
+    codeGroup: '',
+    codeGroupPrefix: '',
+    groupNumber: 0,
+    originalCode: '',
+    title: '',
+    books: 0,
+    duration: 0,
+    description: '',
+    reviewData: {},
+    publisher: {},
+    marker: {},
+    director: {},
+    actress: {},
+    genres: {},
+    otherGenres: {},
+    series: {},
+
+    coverUrl: '',
+    posterUrl: '',
+    pictures: [],
+    isOnSale: false,
+    isEnabled: false,
+    messages: [],
+    html: '',
+    releaseAt: new Date(),
+    publishAt: new Date(),
+    collectedAt: new Date(),
+    createdAt: new Date(),
+    updateAt: new Date(0),
+    deleteAt: new Date(0),
+}
+
+
 
 /**
  * 刮削影片信息模型
@@ -240,11 +287,17 @@ export const sourceMovieInfoSchema = new Schema<ISourceMovieInfoDocument>({
         comment: '标签',
         default: []
     },
+    otherGenres: {
+        type: [{ type: Schema.Types.Mixed }],
+        comment: '其他标签',
+        default: []
+    },
     series: {
         type: [{ type: Schema.Types.Mixed }],
         comment: '系列',
         default: []
     },
+
     coverUrl: {
         type: String,
         comment: '封面',

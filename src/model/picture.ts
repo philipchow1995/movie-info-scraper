@@ -1,5 +1,5 @@
 import { Schema } from '@d680/db-client';
-import { MoviePictureType } from '@d680/shared';
+import { BaseProcessStatus, MoviePictureType } from '@d680/shared';
 export { MoviePictureType };
 
 import { IPictureEntity, IPictureCompressEntity, PictureCompressFormat } from '@d680/picture-client';
@@ -8,44 +8,21 @@ import { IPictureEntity, IPictureCompressEntity, PictureCompressFormat } from '@
  * 刮削状态
  */
 export enum PictureScrapeStatus {
-    // 待处理
-    WAITING = "WAITING",
-    // 处理中
-    PROCESSING = "PROCESSING",
-    // 处理完成
-    COMPLETED = "COMPLETED",
-    // 处理失败
-    FAILED = "FAILED",
-    // 未知
-    UNKNOWN = "UNKNOWN"
-}
-
-/**
- * 压缩模型
- */
-export interface ISourceMoviePictureCompressDocument extends IPictureCompressEntity {
-    // 压缩格式
-    zipFormat: PictureCompressFormat;
-    // 图片目录
-    directoryName: string;
-    // 图片文件名
-    filename: string;
-    // 图片宽度
-    width: number;
-    // 图片高度
-    height: number;
-    // 图片大小
-    size: number;
-    // 是否添加水印
-    hasWaterMark: boolean;
+    WAITING = BaseProcessStatus.WAITING,
+    PROCESSING = BaseProcessStatus.PROCESSING,
+    COMPLETED = BaseProcessStatus.COMPLETED,
+    FAILED = BaseProcessStatus.FAILED,
+    UNKNOWN = BaseProcessStatus.UNKNOWN
 }
 
 /**
  * 图片刮削模型
  */
-export interface ISourceMoviePictureDocument extends IPictureEntity {
+export interface ISourceMoviePictureModel extends IPictureEntity {
     // 主键ID
     id: string;
+    // 存储ID
+    storageId: string;
     // 序号
     seq: number;
     // 图片URL
@@ -69,15 +46,47 @@ export interface ISourceMoviePictureDocument extends IPictureEntity {
     // 图片高度
     height: number;
     // 压缩列表
-    compressList: ISourceMoviePictureCompressDocument[];
+    compressList: ISourceMoviePictureCompressModel[];
 }
 
+/**
+ * 图片压缩模型
+ */
+export interface ISourceMoviePictureCompressModel extends IPictureCompressEntity {
+    // 压缩格式
+    zipFormat: PictureCompressFormat;
+    // 图片目录
+    directoryName: string;
+    // 图片文件名
+
+    fileName: string;
+    // 图片宽度
+    width: number;
+    // 图片高度
+    height: number;
+    // 图片大小
+    size: number;
+    // 是否添加水印
+    hasWaterMark: boolean;
+}
+
+/**
+ * 图片刮削Mongoose Document
+ */
+export interface ISourceMoviePictureDocument extends ISourceMoviePictureModel, Document { }
+
+/**
+ * 图片压缩Mongoose Document
+ */
+
+export interface ISourceMoviePictureCompressDocument extends ISourceMoviePictureCompressModel, Document { }
 
 
+// 图片压缩模型的Schema
 
-// 压缩模型的Schema
 export const sourceMoviePictureCompressSchema = new Schema<ISourceMoviePictureCompressDocument>({
     // 压缩格式
+
     zipFormat: {
         type: String,
         required: true,
@@ -91,7 +100,7 @@ export const sourceMoviePictureCompressSchema = new Schema<ISourceMoviePictureCo
         comment: '图片目录'
     },
     // 图片文件名
-    filename: {
+    fileName: {
         type: String,
         required: true,
         comment: '图片文件名'
@@ -123,7 +132,13 @@ export const sourceMoviePictureCompressSchema = new Schema<ISourceMoviePictureCo
 }, { _id: false });
 
 
+// 图片刮削模型的Schema
 export const sourceMoviePictureSchema = new Schema<ISourceMoviePictureDocument>({
+    id: {
+        type: String,
+        required: true,
+        comment: '主键ID'
+    },
     // 序号
     seq: {
         type: Number,
@@ -154,44 +169,44 @@ export const sourceMoviePictureSchema = new Schema<ISourceMoviePictureDocument>(
     // 图片MD5
     md5: {
         type: String,
-        required: true,
-        comment: '图片MD5'
+        comment: '图片MD5',
+        default: ''
     },
     // 图片目录
     directoryName: {
         type: String,
-        required: true,
-        comment: '图片目录'
+        comment: '图片目录',
+        default: ''
     },
     // 图片文件名
     fileName: {
         type: String,
-        required: true,
-        comment: '图片文件名'
+        comment: '图片文件名',
+        default: ''
     },
     // 图片扩展名
     extName: {
         type: String,
-        required: true,
-        comment: '图片扩展名'
+        comment: '图片扩展名',
+        default: ''
     },
     // 图片大小
     size: {
         type: Number,
-        required: true,
-        comment: '图片大小'
+        comment: '图片大小',
+        default: 0
     },
     // 图片宽度
     width: {
         type: Number,
-        required: true,
-        comment: '图片宽度'
+        comment: '图片宽度',
+        default: 0
     },
     // 图片高度
     height: {
         type: Number,
-        required: true,
-        comment: '图片高度'
+        comment: '图片高度',
+        default: 0
     },
     // 压缩列表
     compressList: {
