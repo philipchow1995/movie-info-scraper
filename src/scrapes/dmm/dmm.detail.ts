@@ -3,12 +3,12 @@ import { generateSnowflakeId } from '@d680/shared';
 import { getLogger } from '../../init/logger'
 import { MovieInfoScrapeSource, MovieInfoScrapeStatus } from '../../types/movie.enum'
 import { MovieInfoScrapeException } from '../../types/movie.exception'
-import { ISourceMovieGeneralModel, ISourceMovieInfoModel, DEFAULT_SOURCE_MOVIE_INFO, ISourceMovieReviewModel, SourceMovieInfoModel } from '../../model'
+import { ISourceMovieGeneralModel, ISourceMovieInfoModel, DEFAULT_SOURCE_MOVIE_INFO, ISourceMovieReviewModel, SourceMovieInfoRepository } from '../../database/source.movie.model'
 import { IMovieInfoScrapeDetail } from '../../interface/scraper'
 import { DMM_DETAIL_URL, getDmmCodeFromUrl, deDmmCode, getDmmCodeFormatter } from './utils'
 import { BaseDetailScrape } from '../base.detail'
 import { dmmAxiosBuilder, dmmDetailAxiosHeaders } from './dmm.axios'
-import { getDmmCoverUrl, getDmmPostUrl, getDmmPictures, getDmmCoverPicture, getDmmPostPicture } from './picture'
+import { getDmmCoverUrl, getDmmPostUrl, getDmmPictures, getDmmCoverPicture, getDmmPostPicture } from './picture.utils'
 
 /**
  * 刮削DMM详情
@@ -61,10 +61,11 @@ export class DmmDetailScrape extends BaseDetailScrape implements IMovieInfoScrap
             this.checkData();
 
             // 检查是否已存在
-            const existData = await SourceMovieInfoModel.findOne({
+            const existData = await SourceMovieInfoRepository.findOne({
                 code: this.model.code,
                 source: this.SOURCE
             });
+
             if (existData)
                 return { ...existData.toObject(), isExist: true };
 
@@ -215,10 +216,10 @@ export class DmmDetailScrape extends BaseDetailScrape implements IMovieInfoScrap
             this.model.posterUrl = this.model.posterUrl || getDmmPostUrl(this.model.originalCode!);
             // 没有图片才去添加图片 | 列表页来的图片应该有了
             if (!this.model.pictures || this.model.pictures.length === 0) {
-                this.model.pictures = this.model.pictures || getDmmPictures(this.model.originalCode!, picturesCount);
+                this.model.pictures = this.model.pictures || getDmmPictures(this.model.id, this.model.originalCode!, picturesCount);
 
-                const coverPicture = getDmmCoverPicture(this.model.originalCode!, this.model.coverUrl);
-                const postPicture = getDmmPostPicture(this.model.originalCode!, this.model.posterUrl);
+                const coverPicture = getDmmCoverPicture(this.model.id, this.model.originalCode!, this.model.coverUrl);
+                const postPicture = getDmmPostPicture(this.model.id, this.model.originalCode!, this.model.posterUrl);
 
                 if (this.model.posterUrl)
                     this.model.pictures.unshift(postPicture);

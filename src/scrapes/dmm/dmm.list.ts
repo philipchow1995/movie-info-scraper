@@ -4,14 +4,14 @@ import { IMovieInfoScrapeList, IBaseQuery } from '../../interface/scraper'
 import { MovieInfoScrapeException } from '../../types/movie.exception'
 import { BaseListScrape } from '../base.list'
 import { dmmAxiosBuilder, dmmListAxiosHeaders } from './dmm.axios'
-import { ISourceMovieInfoModel, ISourceMovieGeneralModel, ISourceMovieReviewModel, MovieInfoScrapeSource, DEFAULT_SOURCE_MOVIE_INFO, MovieInfoScrapeStatus, ISourceMoviePictureModel, PictureScrapeStatus, SourceMovieInfoModel } from '../../model'
+import {
+    ISourceMovieInfoModel, ISourceMovieGeneralModel, ISourceMovieReviewModel, MovieInfoScrapeSource, DEFAULT_SOURCE_MOVIE_INFO,
+    MovieInfoScrapeStatus, SourceMovieInfoRepository,
+} from '../../database/source.movie.model'
+import { IPictureModel, PictureStatus, getDefaultPictureModel, PictureTargetType } from '../../database/picture.model'
 import { DMM_LIST_API_URL, IGraphqlMovie, IGraphqlActress, IGraphqlMovieImage, IGraphqlMovieReview, IGraphqlMaker, IDmmQuery, DmmContentType, DmmReleaseType, DEFAULT_VARIABLES, AV_SEARCH_QUERY } from './query'
-import { getDmmCoverPicture, getDmmPostPicture } from './picture'
+import { getDmmCoverPicture, getDmmPostPicture } from './picture.utils'
 import { deDmmCode, getDmmDetailUrl, getDmmCodeFormatter } from './utils'
-
-// 导入 mongoose
-import mongoose from 'mongoose';
-import { exitCode } from 'process'
 
 // GraphQL返回的分页信息结果
 interface IPageInfoModel {
@@ -182,7 +182,7 @@ export class DmmListScrape extends BaseListScrape implements IMovieInfoScrapeLis
             result.code = deDmmCode(data.id);
 
             // 检查是否已存在
-            const existData = await SourceMovieInfoModel.findOne({
+            const existData = await SourceMovieInfoRepository.findOne({
                 code: result.code,
                 source: this.SOURCE,
             });
@@ -205,12 +205,12 @@ export class DmmListScrape extends BaseListScrape implements IMovieInfoScrapeLis
             result.actress = this.transActress(data.actresses);
 
             // 封面图片
-            const coverPicture = getDmmCoverPicture(result.originalCode!);
+            const coverPicture = getDmmCoverPicture(result.id, result.originalCode!);
             // 海报图片
-            const postPicture = getDmmPostPicture(result.originalCode!);
+            const postPicture = getDmmPostPicture(result.id, result.originalCode!);
             result.coverUrl = coverPicture.url;
             result.posterUrl = postPicture.url;
-            result.pictures = this.transPictures(data.sampleImages);
+            result.pictures = this.transPictures(result.id, data.sampleImages);
             if (result.posterUrl)
                 result.pictures.push(postPicture);
             if (result.coverUrl)
@@ -247,29 +247,20 @@ export class DmmListScrape extends BaseListScrape implements IMovieInfoScrapeLis
     }
 
 
-    // 转换IGraphqlMovieImage[]为IScrapeMoviePictureDocument[]
-    private transPictures = (graphqlPicturesDatas: IGraphqlMovieImage[]): ISourceMoviePictureModel[] => {
+    // 转换IGraphqlMovieImage[]为ISourcePictureModel[]
+    private transPictures = (id: bigint, graphqlPicturesDatas: IGraphqlMovieImage[]): IPictureModel[] => {
         return graphqlPicturesDatas.map(graphqlData => {
             return {
-                id: generateSnowflakeId().toString(),
-                storageId: getLocalStorageId(),
-                seq: graphqlData.number,
+                ...getDefaultPictureModel(),
                 url: graphqlData.largeUrl,
+                seq: graphqlData.number,
                 pictureType: MoviePictureType.剧照,
-                status: PictureScrapeStatus.WAITING,
-                sourceUrl: '',
-                md5: '',
-                width: 0,
-                height: 0,
-                size: 0,
-                directoryName: '',
-                fileName: '',
-                extName: '',
-                compressList: []
-            } as ISourceMoviePictureModel;
+                status: PictureStatus.WAITING,
+                targetType: PictureTargetType.MOVIE,
+                targetId: id
+            }
         })
     }
-
 
     // 转换IGraphqlMovieReview为IScrapeSourceReviewModel
     private transReview = (graphqlReviewData: IGraphqlMovieReview): ISourceMovieReviewModel => {

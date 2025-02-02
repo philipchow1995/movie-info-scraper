@@ -1,18 +1,14 @@
 import { generateSnowflakeId } from "@d680/shared";
 import { getLocalStorageId } from "../../init";
 import { dmmCode2dmmDvdCode } from "./utils";
-import { ISourceMovieInfoModel, MoviePictureType, PictureScrapeStatus } from "../../model";
-import { ISourceMoviePictureModel, ISourceMoviePictureCompressModel } from "../../model/picture";
+import { IPictureModel, IPictureCompressModel, PictureTargetType, PictureStatus, MoviePictureType } from "../../database/picture.model";
+
 
 // Dmm的亚马逊云图片基地址
 export const DMM_AWS_PICTURE_BASE_URL = 'https://awsimgsrc.dmm.co.jp/pics_dig/digital/video/';
 
-
-
 // Dmm的亚马逊云DVD图片基地址
 const DMM_AWS_DVD_PICTURE_BASE_URL = 'https://awsimgsrc.dmm.co.jp/pics_dig/mono/movie/';
-
-
 
 // 解析获得Dmm的封面原图
 export const getDmmCoverUrl = (dmmCode: string) => {
@@ -45,40 +41,47 @@ export const getDmmDvdPostUrl = (dmmCode: string) => {
 
 
 // 解析获得Dmm的剧照
-export const getDmmPictures = (dmmCode: string, count: number, sourceUrl?: string): ISourceMoviePictureModel[] => {
-    const pictures: ISourceMoviePictureModel[] = [];
+export const getDmmPictures = (targetId: bigint, dmmCode: string, count: number, sourceUrl?: string): IPictureModel[] => {
+    const pictures: IPictureModel[] = [];
+
     for (let i = 1; i <= count; i++) {
-        const picture: ISourceMoviePictureModel = {
-            id: generateSnowflakeId().toString(),
+        const picture: IPictureModel = {
+            id: generateSnowflakeId(),
             storageId: getLocalStorageId(),
             seq: i,
             url: `${DMM_AWS_PICTURE_BASE_URL}${dmmCode}/${dmmCode}jp-${i}.jpg`,
             pictureType: MoviePictureType.剧照,
-            status: PictureScrapeStatus.WAITING,
+            status: PictureStatus.WAITING,
             sourceUrl: sourceUrl ?? '',
             md5: '',
             width: 0,
             height: 0,
             size: 0,
+
             directoryName: '',
             fileName: '',
             extName: '',
-            compressList: []
+            compressList: [],
+            targetType: PictureTargetType.MOVIE,
+            targetId: targetId
         }
         pictures.push(picture);
     }
+
+
     return pictures;
 }
 
-export const getDmmCoverPicture = (dmmCode: string, sourceUrl?: string) => {
+export const getDmmCoverPicture = (targetId: bigint, dmmCode: string, sourceUrl?: string) => {
     const url = getDmmCoverUrl(dmmCode);
-    const picture: ISourceMoviePictureModel = {
-        id: generateSnowflakeId().toString(),
+    const picture: IPictureModel = {
+        id: generateSnowflakeId(),
         storageId: getLocalStorageId(),
         seq: -2,
         url: url,
         pictureType: MoviePictureType.封面,
-        status: PictureScrapeStatus.WAITING,
+        status: PictureStatus.WAITING,
+
         sourceUrl: sourceUrl ?? '',
         md5: '',
         width: 0,
@@ -87,30 +90,37 @@ export const getDmmCoverPicture = (dmmCode: string, sourceUrl?: string) => {
         directoryName: '',
         fileName: '',
         extName: '',
-        compressList: []
+        compressList: [],
+        targetType: PictureTargetType.MOVIE,
+        targetId: targetId
     }
     return picture;
 }
 
+
+
 // 获取Dmm的海报图片
-export const getDmmPostPicture = (dmmCode: string, sourceUrl?: string) => {
+export const getDmmPostPicture = (targetId: bigint, dmmCode: string, sourceUrl?: string) => {
     const url = getDmmPostUrl(dmmCode);
-    const picture: ISourceMoviePictureModel = {
-        id: generateSnowflakeId().toString(),
+    const picture: IPictureModel = {
+        id: generateSnowflakeId(),
         storageId: getLocalStorageId(),
         seq: -1,
         url: url,
         pictureType: MoviePictureType.海报,
-        status: PictureScrapeStatus.WAITING,
+        status: PictureStatus.WAITING,
         sourceUrl: sourceUrl ?? '',
         md5: '',
         width: 0,
         height: 0,
+
         size: 0,
         directoryName: '',
         fileName: '',
         extName: '',
-        compressList: []
+        compressList: [],
+        targetType: PictureTargetType.MOVIE,
+        targetId: targetId
     }
     return picture;
 }

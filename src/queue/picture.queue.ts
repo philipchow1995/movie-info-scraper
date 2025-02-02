@@ -4,7 +4,7 @@ import { getCurrentDateTime, getRedisConfig, type IRedisConfig } from '@d680/sha
 import { getRedisConnection } from '../init';
 import { getLogger } from '../init/logger'
 import { MovieInfoScrapeSource } from '../types/movie.enum';
-import { ISourceMoviePictureModel } from '../model/picture';
+import { ISourcePictureModel } from '../model/picture';
 import { IScrapePictureQueueJob } from './queue.type';
 
 const queueName = 'pictureDownload';
@@ -12,10 +12,21 @@ const queueName = 'pictureDownload';
 // 刮削图片队列
 export const ScraperPictureQueue = new Queue(queueName, { connection: getRedisConnection() });
 
+// 添加任务
 export const AddJob = async (data: IScrapePictureQueueJob) => {
     const logger = getLogger();
 
-    const jobId = `picture_download_${data.picture.sourceUrl}`;
+    // 将 BigInt 转换为字符串
+    const jobData = {
+        ...data,
+        picture: {
+            ...data.picture,
+            id: data.picture.id.toString(),  // 转换 id
+            targetId: data.picture.targetId?.toString()  // 转换 targetId（如果存在）
+        }
+    };
+
+    const jobId = `picture_download_${jobData.picture.url}`;
     // 检查任务是否已存在
     const existingJob = await ScraperPictureQueue.getJob(jobId);
     if (existingJob) {
@@ -23,7 +34,7 @@ export const AddJob = async (data: IScrapePictureQueueJob) => {
         return;
     }
 
-    await ScraperPictureQueue.add(queueName, data, {
+    await ScraperPictureQueue.add(queueName, jobData, {
         jobId,
         attempts: 3,
         backoff: { type: 'exponential', delay: 3000 },
@@ -51,4 +62,9 @@ export const cancel = async (code: string, source: MovieInfoScrapeSource) => {
             }
         }
     }
+}
+
+// 清空队列
+export const clearQueue = async () => {
+    await ScraperPictureQueue.obliterate({ force: true });
 }

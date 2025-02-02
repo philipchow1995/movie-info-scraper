@@ -1,9 +1,14 @@
+import { MoviePictureType, generateSnowflakeId } from '@d680/shared';
 import { init } from './init';
 import { DmmDetailScrape } from './scrapes/dmm/dmm.detail';
 import { DmmListScrape } from './scrapes/dmm/dmm.list';
 import { DmmScraper } from './scrapes/dmm/dmm.scraper';
 import { ProcessPicture } from './services/picture.service';
 import { MovieInfoScrapeSource } from './types/movie.enum';
+import { PictureRepository, IPictureModel, PictureStatus, getDefaultPictureModel, PictureTargetType } from './database/picture.model';
+import { SourceMovieInfoRepository } from './database/source.movie.model';
+import { getLocalStorageId } from './init';
+
 
 const testDetail = async () => {
     try {
@@ -24,14 +29,6 @@ const testList = async () => {
         await init();
         const dmmScraper = await DmmScraper.init();
         await dmmScraper.search('母と息子の密着交尾');
-
-        // const item = result[0];
-        // if (item && item.pictures)
-        //     ProcessPicture(item.code!, item.source, item.pictures![0]);
-        // result.map(item => {
-
-        // });
-        //console.log(result);
         console.log('ok');
     }
     catch (err) {
@@ -51,6 +48,32 @@ const testDay = async () => {
     }
 }
 
+const testPicture = async () => {
+    try {
+        await init();
+        const tempData: IPictureModel = {
+            ...getDefaultPictureModel(),
+            targetId: BigInt(1),
+            url: 'https://pics.dmm.co.jp/digital/video/h_086nuka00073/h_086nuka00073pl.jpg',
+            pictureType: MoviePictureType.剧照,
+            seq: 1,
+
+            status: PictureStatus.WAITING,
+        }
+
+
+        const tempDownload = await ProcessPicture('natr00689', MovieInfoScrapeSource.DMM, tempData);
+        const tempSave = await PictureRepository.create(tempDownload);
+        tempSave.save();
+        console.log(tempDownload);
+
+    }
+    catch (err) {
+        console.error(err);
+    }
+}
+
 testList();
+// testPicture();
 
 

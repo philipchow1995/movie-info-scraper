@@ -1,22 +1,6 @@
-import { Redis } from 'ioredis';
-import { Queue, Worker } from 'bullmq';
-import { getRedisConfig, type IRedisConfig } from '@d680/shared';
+import { Queue } from 'bullmq';
 import { getRedisConnection } from '../init';
-import { ISourceMoviePictureModel } from '../model/picture';
 import { IScrapePictureQueueJob } from './queue.type';
-
-// const redisConfig = getRedisConfig();
-
-// const redisConnection = new Redis({
-//     host: redisConfig.host,
-//     port: redisConfig.port,
-//     password: redisConfig.password,
-//     db: redisConfig.db,
-//     maxRetriesPerRequest: null,
-//     retryStrategy: (times) => {
-//         return Math.min(times * 50, 2000);
-//     }
-// });
 
 // 刮削详情队列
 export const ScraperDetailQueue = new Queue('scraperDetail', { connection: getRedisConnection() });
@@ -29,7 +13,6 @@ export const AddScraperPictureJob = async (data: IScrapePictureQueueJob) => {
 
     // 使用图片URL作为唯一标识
     const jobId = `picture_${data.source}_${data.code}_${data.picture.id}`.toLocaleLowerCase();
-
 
     // 检查任务是否已存在
     const existingJob = await ScraperPictureQueue.getJob(jobId);

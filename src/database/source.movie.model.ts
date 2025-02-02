@@ -1,8 +1,8 @@
+import { generateSnowflakeId } from '@d680/shared';
 import { Schema, model, Connection, Model, Document, Types } from '@d680/db-client';
 import { MovieInfoScrapeSource, MovieInfoScrapeStatus } from '../types/movie.enum';
 export { MovieInfoScrapeSource, MovieInfoScrapeStatus };
-import { ISourceMoviePictureModel, sourceMoviePictureSchema } from './picture';
-export * from './picture';
+import { IPictureModel } from './picture.model';
 
 /*
     刮削影片信息 Mongoose模型    
@@ -12,12 +12,6 @@ export * from './picture';
 const modelName = 'SourceMovieInfo';
 const collectionName = 'source_movie_info';
 
-// 模型接口
-export interface IScrapeMovieInfoModel extends Model<ISourceMovieInfoDocument> {
-    findByCode(code: string): Promise<ISourceMovieInfoDocument[]>;
-    findBySource(source: string): Promise<ISourceMovieInfoDocument[]>;
-    findByTitle(name: string): Promise<ISourceMovieInfoDocument[]>;
-}
 
 /**
  * 来源评论刮削模型
@@ -29,6 +23,7 @@ export interface ISourceMovieReviewModel {
     count: number
 }
 
+
 /**
  * 来源通用子项刮削模型 (DMM)
  */
@@ -39,13 +34,17 @@ export interface ISourceMovieGeneralModel {
     name: string;
 }
 
+// 影片模型 DAO
 export interface ISourceMovieInfoModel {
+    // 主键
+    id: bigint;
     // 是否已存在
     isExist: boolean;
     // 刮削状态 
     status: MovieInfoScrapeStatus,
     // 刮削源
     source: MovieInfoScrapeSource,
+
     // 刮削源URL
     sourceUrl?: string,
     // 刮削源番号
@@ -91,7 +90,7 @@ export interface ISourceMovieInfoModel {
     // 刮削源海报
     posterUrl?: string,
     // 刮削源图片
-    pictures?: ISourceMoviePictureModel[],
+    pictures?: IPictureModel[],
 
     // 是否已上架(刮削来源)
     isOnSale?: boolean,
@@ -120,7 +119,9 @@ export interface ISourceMovieInfoModel {
     deleteAt?: Date,
 }
 
+// 影片模型默认值
 export const DEFAULT_SOURCE_MOVIE_INFO: ISourceMovieInfoModel = {
+    id: generateSnowflakeId(),
     isExist: false,
     status: MovieInfoScrapeStatus.WAITING,
     source: MovieInfoScrapeSource.UNKNOWN,
@@ -138,11 +139,10 @@ export const DEFAULT_SOURCE_MOVIE_INFO: ISourceMovieInfoModel = {
     publisher: {},
     marker: {},
     director: {},
-    actress: {},
     genres: {},
     otherGenres: {},
+    actress: {},
     series: {},
-
     coverUrl: '',
     posterUrl: '',
     pictures: [],
@@ -154,27 +154,32 @@ export const DEFAULT_SOURCE_MOVIE_INFO: ISourceMovieInfoModel = {
     publishAt: new Date(),
     collectedAt: new Date(),
     createdAt: new Date(),
-    updateAt: new Date(0),
-    deleteAt: new Date(0),
+    updateAt: new Date(),
+    deleteAt: new Date(),
 }
 
-
-
-/**
- * 刮削影片信息模型
- */
-export interface ISourceMovieInfoDocument extends Document, ISourceMovieInfoModel {
-    _id: Types.ObjectId;
+// 导出默认值
+export const getDefaultSourceMovieInfo = (): ISourceMovieInfoModel => {
+    return DEFAULT_SOURCE_MOVIE_INFO;
 }
 
-/**
- * 刮削影片信息模型Schema
+// 影片模型Moogoose Document
+export type ISourceMovieInfoDocument = ISourceMovieInfoModel & Document & { id: bigint };
 
- */
+// 影片模型Moogoose Schema
 export const sourceMovieInfoSchema = new Schema<ISourceMovieInfoDocument>({
+    // 主键
+    id: {
+        type: Schema.Types.BigInt,
+        required: true,
+        comment: '主键',
+        index: true,
+        unique: true,
+    },
     // 刮削状态
     status: {
         type: String,
+
         required: true,
         enum: Object.values(MovieInfoScrapeStatus),
         default: MovieInfoScrapeStatus.PROCESSING,
@@ -312,11 +317,6 @@ export const sourceMovieInfoSchema = new Schema<ISourceMovieInfoDocument>({
         trim: true,
         maxlength: 500
     },
-    pictures: {
-        type: [sourceMoviePictureSchema],
-        comment: '图片',
-        default: []
-    },
     isOnSale: {
         type: Boolean,
         comment: '是否已上架',
@@ -374,21 +374,7 @@ export const sourceMovieInfoSchema = new Schema<ISourceMovieInfoDocument>({
 // 番号+刮削源 唯一索引
 sourceMovieInfoSchema.index({ code: 1, source: 1 }, { unique: true });
 
-sourceMovieInfoSchema.statics.findByCode = function (code: string) {
-    return this.find({ code: code }).sort({ collectedAt: -1 });
-}
-
-sourceMovieInfoSchema.statics.findBySource = function (source: string) {
-    return this.find({ source: source }).sort({ collectedAt: -1 });
-}
-
-sourceMovieInfoSchema.statics.findByTitle = function (name: string) {
-    return this.find({
-        title: { $regex: name, $options: 'i' }  // i 选项表示不区分大小写
-    }).sort({ collectedAt: -1 });
-}
-
-export type SourceMovieInfoModelType = typeof SourceMovieInfoModel;
+export type SourceMovieInfoModelType = typeof SourceMovieInfoRepository;
 
 export function createModel(connection?: Connection) {
     return (connection
@@ -396,4 +382,4 @@ export function createModel(connection?: Connection) {
         : model<ISourceMovieInfoDocument, SourceMovieInfoModelType>(modelName, sourceMovieInfoSchema, collectionName));
 }
 
-export const SourceMovieInfoModel = model<ISourceMovieInfoDocument>(modelName, sourceMovieInfoSchema, collectionName);
+export const SourceMovieInfoRepository = model<ISourceMovieInfoDocument>(modelName, sourceMovieInfoSchema, collectionName);
